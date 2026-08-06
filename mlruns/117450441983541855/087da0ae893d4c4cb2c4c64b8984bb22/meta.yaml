@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/thoufik rifayi/Desktop/Projects/CustomerChurnPrediction/mlruns/117450441983541855/087da0ae893d4c4cb2c4c64b8984bb22/artifacts
+end_time: 1786023291490
+entry_point_name: ''
+experiment_id: '117450441983541855'
+lifecycle_stage: active
+run_id: 087da0ae893d4c4cb2c4c64b8984bb22
+run_name: awesome-wolf-978
+run_uuid: 087da0ae893d4c4cb2c4c64b8984bb22
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1786023218109
+status: 3
+tags: []
+user_id: thoufik rifayi

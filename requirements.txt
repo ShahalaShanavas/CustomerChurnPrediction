@@ -7,5 +7,10 @@ uvicorn
 pydantic
 python-dotenv
 joblib
-great-expectations
 pytest
+statsmodels
+lightgbm
+xgboost
+optuna
+great_expectations==0.17.23
+
