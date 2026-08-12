@@ -1,0 +1,27 @@
+artifact_path: file:///C:/Users/thoufik rifayi/Desktop/Projects/CustomerChurnPrediction/mlruns/117450441983541855/models/m-a44c1fd7d4f540b785614c61a499f456/artifacts
+flavors:
+  lightgbm:
+    code: null
+    data: model.skops
+    lgb_version: 4.7.0
+    model_class: lightgbm.sklearn.LGBMClassifier
+    serialization_format: skops
+    skops_trusted_types:
+    - collections.OrderedDict
+    - lightgbm.sklearn.LGBMClassifier
+    - lightgbm.basic.Booster
+    - lightgbm.sklearn.LGBMRegressor
+  python_function:
+    data: model.skops
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.lightgbm
+    python_version: 3.12.4
+mlflow_version: 3.15.1
+model_id: m-a44c1fd7d4f540b785614c61a499f456
+model_size_bytes: 368201
+model_uuid: m-a44c1fd7d4f540b785614c61a499f456
+prompts: null
+run_id: f509809bf8c04601b240bbf337a12e65
+utc_time_created: '2026-08-12 10:05:19.761375'

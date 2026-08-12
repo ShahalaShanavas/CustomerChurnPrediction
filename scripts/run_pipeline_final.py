@@ -24,6 +24,7 @@ from pathlib import Path
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+import mlflow.lightgbm
 
 from lightgbm import LGBMClassifier
 
@@ -65,15 +66,29 @@ def main(args):
     # ----------------------------------------------
 
     tracking_uri = (
-        args.mlflow_uri
-        if args.mlflow_uri
-        else f"file:///{(PROJECT_ROOT / 'mlruns').as_posix()}"
+    args.mlflow_uri
+    if args.mlflow_uri
+    else f"sqlite:///{(PROJECT_ROOT / 'mlflow.db').as_posix()}"
     )
+
 
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(args.experiment)
 
+
     with mlflow.start_run():
+
+        print("=" * 60)
+        print("MLFLOW DEBUG INFORMATION")
+        print("=" * 60)
+
+        print("Tracking URI :", mlflow.get_tracking_uri())
+        print("Experiment ID:", mlflow.active_run().info.experiment_id)
+        print("Run ID       :", mlflow.active_run().info.run_id)
+        print("Artifact URI :", mlflow.get_artifact_uri())
+
+        print("=" * 60)
+
 
         mlflow.log_param("model", "LightGBM")
         mlflow.log_param("threshold", args.threshold)
@@ -456,10 +471,7 @@ def main(args):
 
         print("\nSaving model to MLflow...")
 
-        mlflow.sklearn.log_model(
-            sk_model=model,
-            artifact_path="model",
-        )
+        mlflow.lightgbm.log_model(model,name="lightgbm_model")
 
         print("Model successfully logged.")
 
@@ -565,4 +577,12 @@ if __name__ == "__main__":
 
 
 # Use this below to run the pipeline:
-# python scripts/run_pipeline_final.py --input data/raw/TelcoCustomerChurn.csv --target Churn
+# python scripts/run_pipeline_final.py --input data/raw/TelcoCustomerChurn.csv --target Churn --threshold 0.30 
+
+# Start the MLflow dashboard and connect it to the mlflow.db database where the experiments and runs are stored.
+# To start the MLflow web interface and tell MLflow where your experiment/run information is stored use this command:
+# mlflow ui --backend-store-uri "sqlite:///./mlflow.db"
+# By default, it runs at: http://127.0.0.1:5000 - open this address in browser to see the experiments and runs. 
+#sqlite:///./mlflow.db - tells MLflow to use a SQLite database file named mlflow.db in the current directory as the backend store for tracking experiments and runs.
+#Run information such as metrics and parameters is stored in the SQLite database file, and you can view and manage it through the MLflow web interface.
+#mlruns/ folder contains the artifacts
