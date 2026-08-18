@@ -13,4 +13,5 @@ lightgbm
 xgboost
 optuna
 great_expectations==0.17.23
+gradio
 

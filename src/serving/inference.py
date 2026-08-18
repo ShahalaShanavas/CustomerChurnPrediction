@@ -47,21 +47,14 @@ except Exception as e:
     print(f"❌ Failed to load model from {MODEL_DIR}: {e}")
     # Fallback for local development (OPTIONAL)
     try:
-        # MLflow 2.x+ "Logged Model" layout:
-        # mlruns/<experiment_id>/models/m-<hash>/artifacts
-        # (older MLflow used mlruns/<experiment_id>/<run_id>/artifacts/model —
-        #  kept as a secondary pattern for backward compatibility)
         local_model_paths = glob.glob("./mlruns/*/models/m-*/artifacts")
-        if not local_model_paths:
-            local_model_paths = glob.glob("./mlruns/*/*/artifacts/model")
-
         if local_model_paths:
             latest_model = max(local_model_paths, key=os.path.getmtime)
 
-            # Convert to a proper file:// URI so MLflow doesn't misparse
-            # a Windows drive letter (C:\...) as a URI scheme.
-            local_path = Path(latest_model).resolve()
-            model = mlflow.pyfunc.load_model(local_path.as_uri())
+            #convert the filesystem path into a URI
+            #MLflow's load_model() accepts model locations in URI-like formats, such as:s3://...,http://...,file:///C:/...
+            local_path = Path(latest_model).resolve() #This converts the model path into an absolute path.
+            model = mlflow.pyfunc.load_model(local_path.as_uri())  #as_uri() converts the local filesystem path into a proper file:// URI so MLflow doesn't misparse a Windows drive letter (C:\...) as a URI scheme.
             MODEL_DIR = str(local_path)
             print(f"✅ Fallback: Loaded model from {MODEL_DIR}")
         else:
@@ -70,10 +63,9 @@ except Exception as e:
         raise Exception(f"Failed to load model: {e}. Fallback failed: {fallback_error}")
 
 # === FEATURE SCHEMA LOADING ===
-# CRITICAL: Load the exact feature column order used during training,
-# from the SAME RUN that produced the loaded model. Multiple training runs
-# can each leave behind their own model + feature_columns.txt, so we must
-# not pair a model from one run with feature columns from a different run
+# CRITICAL: Load the exact feature column order used during training,from the SAME RUN that produced the loaded model. 
+# Multiple training runs can each leave behind their own model + feature_columns.txt, 
+# so we must not pair a model from one run with feature columns from a different run
 # (that reintroduces train/serve skew even though loading "succeeds").
 try:
     feature_file = os.path.join(MODEL_DIR, "feature_columns.txt")
@@ -92,11 +84,14 @@ try:
         if run_id:
             # MODEL_DIR looks like: .../mlruns/<exp_id>/models/m-<hash>/artifacts
             # The run's own artifacts live at: .../mlruns/<exp_id>/<run_id>/artifacts
-            model_dir_path = Path(MODEL_DIR)
+            model_dir_path = Path(MODEL_DIR) #Converts the model directory into a Path object.
+            #find where the "models" directory appears in the path.
             models_idx = model_dir_path.parts.index("models") if "models" in model_dir_path.parts else None
+
+            ##Uses everything before "models" as the MLflow experiment root.
             if models_idx is not None:
-                exp_root = Path(*model_dir_path.parts[:models_idx])
-                candidate = exp_root / run_id / "artifacts" / "feature_columns.txt"
+                exp_root = Path(*model_dir_path.parts[:models_idx]) #takes everything in the path before models and turn it back into a Path.
+                candidate = exp_root / run_id / "artifacts" / "feature_columns.txt" #Constructs the expected path to feature_columns.txt for the run_id.
                 if candidate.exists():
                     feature_file = str(candidate)
                     print(f"ℹ️  Using feature_columns.txt from matching run {run_id}: {feature_file}")
@@ -105,7 +100,7 @@ try:
             # Last-resort fallback: search anywhere under mlruns/. This is NOT
             # guaranteed to match the loaded model's training run — only used
             # when the run_id could not be resolved from MLmodel above.
-            candidates = glob.glob("./mlruns/**/feature_columns.txt", recursive=True)
+            candidates = glob.glob("./mlruns/**/feature_columns.txt", recursive=True) #recursive=True means it searches through nested directories.
             if candidates:
                 feature_file = max(candidates, key=os.path.getmtime)
                 print(
@@ -114,7 +109,9 @@ try:
                 )
 
     with open(feature_file) as f:
-        FEATURE_COLS = [ln.strip() for ln in f if ln.strip()]
+        FEATURE_COLS = [ln.strip() for ln in f if ln.strip()] 
+        #Keeps only lines where the stripped result isn't empty.
+        #ln.strip() Removes whitespace from the beginning and end, including the newline \n.
     print(f"✅ Loaded {len(FEATURE_COLS)} feature columns from training")
 except Exception as e:
     raise Exception(f"Failed to load feature columns: {e}")
@@ -182,7 +179,7 @@ def _serve_transform(df: pd.DataFrame) -> pd.DataFrame:
                 .astype(str)                    # Convert to string
                 .str.strip()                    # Remove whitespace
                 .map(mapping)                   # Apply binary mapping
-                .astype("Int64")                # Handle NaN values
+                .astype("Int64")                # Handle NaN values : pandas' nullable integer type - It allows 0,1 and NaN to coexist.
                 .fillna(0)                      # Fill unknown values with 0
                 .astype(int)                    # Final integer conversion
             )
@@ -192,7 +189,7 @@ def _serve_transform(df: pd.DataFrame) -> pd.DataFrame:
     obj_cols = [c for c in df.select_dtypes(include=["object"]).columns]
     if obj_cols:
         # Apply one-hot encoding with drop_first=True (same as training)
-        # This prevents multicollinearity by dropping the first category
+        # This prevents multicollinearity by dropping the first category. The dropped category becomes the reference/baseline category.
         df = pd.get_dummies(df, columns=obj_cols, drop_first=True)
 
     # === STEP 4: Boolean to Integer Conversion ===
@@ -205,6 +202,7 @@ def _serve_transform(df: pd.DataFrame) -> pd.DataFrame:
     # CRITICAL: Ensure features are in exact same order as training
     # Missing features get filled with 0, extra features are dropped
     df = df.reindex(columns=FEATURE_COLS, fill_value=0)
+    #So this line effectively says: "Make this DataFrame look exactly like the feature matrix the model saw during training". That's crucial for production ML
 
     return df
 
@@ -241,6 +239,9 @@ def predict(input_dict: dict) -> str:
     """
 
     # === STEP 1: Convert Input to DataFrame ===
+    #input_dict is one dictionary representing one customer.
+    # Wrapping it in [] creates a list containing one dictionary (list containing 1 row)
+    # Because pd.DataFrame() expects multiple rows
     # Create single-row DataFrame for pandas transformations
     df = pd.DataFrame([input_dict])
 
@@ -255,17 +256,19 @@ def predict(input_dict: dict) -> str:
         preds = model.predict(df_enc)
 
         # Normalize prediction output to consistent format
-        if hasattr(preds, "tolist"):
+        if hasattr(preds, "tolist"): #asks: Does this object have an attribute/method called tolist?
             preds = preds.tolist()  # Convert numpy array to list
 
         # Extract single prediction value (for single-row input)
-        if isinstance(preds, (list, tuple)) and len(preds) == 1:
-            result = preds[0]
+        if isinstance(preds, (list, tuple)) and len(preds) == 1: #asking: Is preds a list or tuple with exactly one element?
+            result = preds[0] #Extract the actual prediction (0 or 1) from the list/tuple
         else:
-            result = preds
+            result = preds 
+            # If the model returns something that isn't a single-item list/tuple, the code simply keeps it unchanged.
+            #If the model returned a single scalar (e.g., 0 or 1), use it directly
 
     except Exception as e:
-        raise Exception(f"Model prediction failed: {e}")
+        raise Exception(f"Model prediction failed: {e}") #more descriptive error message
 
     # === STEP 4: Convert to Business-Friendly Output ===
     # Convert binary prediction (0/1) to actionable business language
@@ -273,3 +276,7 @@ def predict(input_dict: dict) -> str:
         return "Likely to churn"      # High risk - needs intervention
     else:
         return "Not likely to churn"  # Low risk - maintain normal service
+
+
+# TO EXECUTE THIS FILE:
+# python .\src\serving\inference.py

@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "src/serving")  # adjust if needed
+sys.path.insert(0, "src/serving")  
 from inference import predict
 
 sample = {
