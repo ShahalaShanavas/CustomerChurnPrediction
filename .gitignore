@@ -6,4 +6,11 @@ __pycache__/
 *.pyc
 
 # Environment variables
+<<<<<<< HEAD
 .env
+=======
+.env
+
+# VS Code settings (optional)
+.vscode/
+>>>>>>> test1
