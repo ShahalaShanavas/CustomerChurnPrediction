@@ -1,16 +1,63 @@
-# Virtual environment
+# Virtual environments
 .venv/
+venv/
+env/
+ENV/
 
-# Python cache
+# Python cache/compiled files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
 
-# Environment variables
-<<<<<<< HEAD
-.env
-=======
-.env
+# Distribution/build
+build/
+dist/
+*.egg-info/
+.eggs/
 
-# VS Code settings (optional)
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Environment variables / secrets
+.env
+.env.local
+*.pem
+config/secrets.yml
+
+# Data files (often large — uncomment if you don't want to track datasets)
+*.csv
+data/
+datasets/
+
+# Trained models / checkpoints
+*.pkl
+*.h5
+*.pt
+*.pth
+*.joblib
+models/checkpoints/
+
+# Logs
+*.log
+logs/
+
+# IDE / editor
 .vscode/
->>>>>>> test1
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# MLflow / experiment tracking
+mlruns/
+mlflow.db
+mlflow.db-shm
+mlflow.db-wal
+wandb/
+
+# Streamlit / FastAPI cache (if used)
+.streamlit/
